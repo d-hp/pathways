@@ -183,4 +183,6 @@ const getStationArrivals = async () => {
   return stations;
 };
 
+getStationArrivals().then((data) => console.log(data.routes));
+
 module.exports = getStationArrivals;
