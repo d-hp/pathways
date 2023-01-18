@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:3001/paths
+
+GET {{baseUrl}}
+
+###
+POST {{baseUrl}}
+Content-Type: application/json
+
+# {
+
+# }
+
+
