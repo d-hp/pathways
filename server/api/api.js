@@ -5,17 +5,14 @@ const papa = require('papaparse');
 const fs = require('fs');
 const path = require('path');
 
-const parseProto = async () => {
+const parseProto = async (ENDPOINT) => {
   const data = [];
   try {
-    const res = await fetch(
-      'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace',
-      {
-        headers: {
-          'x-api-key': config.MTA_API_KEY,
-        },
-      }
-    );
+    const res = await fetch(`${ENDPOINT}`, {
+      headers: {
+        'x-api-key': config.MTA_API_KEY,
+      },
+    });
     if (!res.ok) {
       //if fetch was not successful -> return error
       const err = new Error(`${res.url}: ${res.status} ${res.statusText}`);
@@ -69,6 +66,8 @@ const makeLinesAndStations = async () => {
   const routes = await parseCSV('routes.csv');
   const stops = await parseCSV('stops.csv');
   //iterate through stops array
+  let stationIdGenerator = 0;
+
   stops.forEach((stop, index) => {
     for (let station of stations) {
       if (station.stationName === stop.stop_name) {
@@ -77,10 +76,11 @@ const makeLinesAndStations = async () => {
       }
     }
     const newStation = {
-      stationId: index,
+      stationId: stationIdGenerator,
       stationName: stop.stop_name,
       stopIds: [stop.stop_id],
     };
+    stationIdGenerator += 1;
     stations.push(newStation);
   });
   //iterate through routes array
@@ -97,13 +97,23 @@ const makeLinesAndStations = async () => {
 };
 
 const unixTimeToReg = (timestamp) => {
-  let time = timestamp.toNumber();
+  let time = timestamp?.toNumber();
   let date = new Date(time * 1000);
 
   let day = date.get;
   let hours = date.getHours();
-  let minutes = '0' + date.getMinutes();
-  let seconds = '0' + date.getSeconds();
+  let minutes;
+  if (date.getMinutes().toString().length === 1) {
+    minutes = '0' + date.getMinutes();
+  } else {
+    minutes = date.getMinutes().toString();
+  }
+  let seconds;
+  if (date.getSeconds().toString().length === 1) {
+    seconds = '0' + date.getSeconds();
+  } else {
+    seconds = date.getSeconds().toString();
+  }
 
   let regFormat =
     hours + ':' + minutes.substring(-2) + ':' + seconds.substring(-2);
@@ -111,8 +121,8 @@ const unixTimeToReg = (timestamp) => {
   return regFormat;
 };
 
-const calculateArrivals = async () => {
-  const feed = await parseProto();
+const calculateArrivals = async (ENDPOINT) => {
+  const feed = await parseProto(ENDPOINT);
   let [stations, lines] = await makeLinesAndStations();
 
   const filteredFeed = feed.filter((entity) => entity.tripUpdate);
@@ -120,44 +130,44 @@ const calculateArrivals = async () => {
   stations = stations.map((station) =>
     Object.assign({}, station, { routes: [] })
   );
-
   filteredFeed.forEach((entity) => {
-    const routeIdOfEntity = entity.tripUpdate.trip.routeId;
+    let routeIdOfEntity = entity.tripUpdate.trip.routeId;
     //iterate through the stopTimeUpdates on current entity
     entity.tripUpdate.stopTimeUpdate.forEach((update) => {
-      //each UPDATE on the entity should be:
-      //parsed for arrival time & stopId
-      // const arrivalTime = unixTimeToReg(update.arrival.time);
-      const arrivalTime = update.arrival.time;
-      const stopId = update.stopId;
+      //each UPDATE on the entity should be: parsed for arrival time & stopId
+
+      let arrivalTime = update?.arrival?.time;
+      let stopId = update?.stopId;
+
       //for each update, we still have to find the corresponding
       //station that has this stopId ...
-      //check if that station has a route that matches the
-      //routeId of entity already
+      //check if that station has a route that matches the routeId of entity already
       stations.forEach((station) => {
         //check if any of the stopIds of current station is equal to stopId
+
         if (station.stopIds.includes(stopId)) {
-          if (station.routes.length >= 1) {
-            //if it is, iterate through the routes array of that station
-            station.routes.forEach((route) => {
-              //check if any of the route objects have a lineId corresponding to the routeId of our original entity
-              if (route.lineId === routeIdOfEntity) {
-                //if the route object already exists, simply push the arrivalTime of this update to the arrivals array
-                route.arrivals.push(arrivalTime);
-              } else {
-                //otherwise, create a new route object with that lineId & arrival-time, and push that to this stations routes field
-                let newRoute = {
-                  lineId: routeIdOfEntity,
-                  arrivals: [arrivalTime],
-                };
-                station.routes.push(newRoute);
-              }
-            });
-          } else {
-            let newRoute = {
+          //if it is, iterate through the routes array of that station
+          //consider substituting this foreach for the routes array into a helper function
+          //to simply the logic further allowing us to debug this code and populate list properly
+          let hasPushedData = false;
+          // let booleanFlag = false;
+          station.routes.forEach((route) => {
+            //check if any of the route objects have a lineId corresponding to the routeId of our original entity
+            if (route.lineId === routeIdOfEntity) {
+              //if the route object already exists, simply push the arrivalTime of this update to the arrivals array
+              route.arrivals.push(arrivalTime);
+              // station.routes.push(route);
+              hasPushedData = true;
+              // return false;
+            }
+          });
+          if (hasPushedData !== true) {
+            newRoute = {
               lineId: routeIdOfEntity,
-              arrivals: [arrivalTime],
+              arrivals: [],
             };
+            newRoute.arrivals.push(arrivalTime);
+            // route.push(newRoute);
             station.routes.push(newRoute);
           }
         }
@@ -167,8 +177,41 @@ const calculateArrivals = async () => {
   return stations;
 };
 
-const getStationArrivals = async () => {
-  const stations = await calculateArrivals();
+const getStationArrivals = async (path) => {
+  const endpoints = {
+    1: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
+    2: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
+    3: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
+    4: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
+    5: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
+    6: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
+    7: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs',
+    A: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace',
+    C: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace',
+    E: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace',
+    J: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-jz',
+    Z: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-jz',
+    G: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g',
+    B: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm',
+    D: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm',
+    F: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm',
+    M: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm',
+    N: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw',
+    Q: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw',
+    R: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw',
+    W: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw',
+    L: 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-l',
+  };
+
+  let ENDPOINT;
+
+  if (path in endpoints) {
+    ENDPOINT = endpoints[path];
+  }
+
+  const stations = await calculateArrivals(ENDPOINT);
+
+  // let newStations = stations.map(station => )
 
   stations.forEach((station) => {
     if (station.routes.length >= 1) {
@@ -183,6 +226,48 @@ const getStationArrivals = async () => {
   return stations;
 };
 
-getStationArrivals().then((data) => console.log(data.routes));
+const singleStationArrivals = async (stationNum, path) => {
+  const stations = await getStationArrivals(path);
+  console.log(stations);
+  let obj = {};
 
-module.exports = getStationArrivals;
+  // const singleStation = stations.filter(
+  //   (station) => station.stationId === stationNum
+  // );
+
+  stations.forEach((station) => {
+    if (station.stationId.toString() === stationNum.toString()) {
+      obj = {
+        stationId: station.stationId,
+        stationName: station.stationName,
+        routes: station.routes,
+        stopIds: station.stopIds,
+      };
+    }
+  });
+
+  return obj;
+};
+
+const getAllPathNames = async (route) => {
+  // const linesAndStations = await makeLinesAndStations();
+  // const stations = linesAndStations[0];
+  const pathList = await parseCSV('path_lists.csv');
+
+  const stationNameList = [];
+
+  pathList.forEach((path) => {
+    if (path.path === route) {
+      stationNameList.push(path.stationName);
+    }
+  });
+
+  return stationNameList;
+};
+
+module.exports = {
+  singleStationArrivals,
+  getStationArrivals,
+  makeLinesAndStations,
+  getAllPathNames,
+};

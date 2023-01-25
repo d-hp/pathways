@@ -37,7 +37,7 @@ export default function SimpleBottomNavigation() {
         <BottomNavigationAction
           component={Link}
           to='/paths'
-          label='Paths'
+          label='Search'
           value='Paths'
           icon={<RouteIcon />}
           sx={{ color: '#2b6777' }}
@@ -45,7 +45,7 @@ export default function SimpleBottomNavigation() {
         <BottomNavigationAction
           component={Link}
           to='/stops'
-          label='Stops'
+          label='Login'
           value='Stops'
           icon={<DirectionsTransitIcon />}
           sx={{ color: '#2b6777' }}

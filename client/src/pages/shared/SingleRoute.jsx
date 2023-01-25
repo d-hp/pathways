@@ -26,10 +26,9 @@ import { ReactComponent as SRA } from '../../assets/images/s.svg';
 import { ReactComponent as SFA } from '../../assets/images/s.svg';
 import { ReactComponent as S42 } from '../../assets/images/s.svg';
 import { ImageList, ImageListItem } from '@mui/material';
-import { Link } from 'react-router-dom';
 import './shared.css';
 
-const RouteLogo = () => {
+const SingleRoute = ({ routeToRender }) => {
   const routes = [
     [<One />, '1'],
     [<Two />, '2'],
@@ -59,19 +58,20 @@ const RouteLogo = () => {
     [<S42 />, 'S42'],
   ];
 
+  let ROUTE;
+  routes.forEach((route, index) => {
+    if (route[1] === routeToRender) {
+      ROUTE = index;
+    }
+  });
+
   return (
-    <ImageList sx={{ width: 275 }} cols={3} rowHeight={90} gap={9}>
-      {routes.map((route, index) => (
-        <ImageListItem
-          key={index}
-          className='image-list-item'
-          sx={{ opacity: '0.75' }}
-        >
-          <Link to={`/paths/${route[1]}`}>{route[0]}</Link>
-        </ImageListItem>
-      ))}
+    <ImageList sx={{ width: 100, height: 100 }} cols={1}>
+      <ImageListItem className='image-list-item' sx={{ opacity: '0.75' }}>
+        {routes[ROUTE][0]}
+      </ImageListItem>
     </ImageList>
   );
 };
 
-export default RouteLogo;
+export default SingleRoute;

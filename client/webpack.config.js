@@ -10,6 +10,13 @@ module.exports = {
   devServer: {
     port: 3000,
     liveReload: true,
+    proxy: {
+      '/paths': {
+        target: 'http://localhost:3000',
+        router: () => 'http://localhost:3001',
+        logLevel: 'debug',
+      },
+    },
   },
   devtool: 'source-map',
   module: {

@@ -8,7 +8,6 @@ const morgan = require('morgan');
 const pathsRouter = require('./controllers/paths');
 const stopsRouter = require('./controllers/stops');
 
-const getStationArrivals = require('./api/api');
 const cron = require('node-cron');
 
 //serve static folders from public repository

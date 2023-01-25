@@ -1,0 +1,17 @@
+.image-list-item:hover {
+  opacity: 1;
+}
+
+#title-search {
+  margin-top: 50px;
+  font-weight: 700;
+  color: #2b6777;
+}
+
+#stop-container {
+  margin-top: 50px;
+}
+
+.list-item {
+  padding-bottom: 5px;
+}

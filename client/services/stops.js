@@ -1,13 +1,13 @@
 import axios from 'axios';
-const baseUrl = 'http://localhost:3001/routes';
+const baseUrl = 'http://localhost:3001';
 
-const getStops = async () => {
-  const res = await axios.get(baseUrl);
+const getStop = async (stop, path) => {
+  const res = await axios.get(`${baseUrl}/paths/${path}/stops/${stop}`);
   return res.data;
 };
 
-const getStop = async () => {
-  const res = await axios.get(`${baseUrl}/${id}`);
+const getStops = async () => {
+  const res = await axios.get(`${baseUrl}/stops`);
   return res.data;
 };
 

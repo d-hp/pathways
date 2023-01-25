@@ -1,11 +1,15 @@
 body {
-  overflow: hidden;
   background-color: #f2f2f2;
 }
 
 #title {
-  margin-top: 30px;
-  font-family: 'Inter';
-  font-weight: 600;
+  margin-top: 50px;
+  /* font-family: 'Inter'; */
+  font-weight: 700;
   color: #2b6777;
+  text-decoration: none;
+}
+
+#title:hover {
+  color: rgba(0, 0, 255, 0.468);
 }

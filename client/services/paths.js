@@ -1,14 +1,10 @@
 import axios from 'axios';
-const baseUrl = 'http://localhost:3001/routes';
+const baseUrl = 'http://localhost:3001/paths';
 
-const getPaths = async () => {
-  const res = await axios.get(baseUrl);
+const getPaths = async (path) => {
+  // Frontend service that will utilize axios.get to post to the baseUrl and paths endpoint specifically
+  const res = await axios.get(`${baseUrl}/${path}`);
   return res.data;
 };
 
-const getPath = async () => {
-  const res = await axios.get(`${baseUrl}/${id}`);
-  return res.data;
-};
-
-export default { getPaths, getPath };
+export default { getPaths };

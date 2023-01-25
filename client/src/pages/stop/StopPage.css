@@ -1,0 +1,26 @@
+#title-stop {
+  margin-top: 50px;
+  font-weight: 700;
+  color: #2b6777;
+}
+
+.stop-col-title {
+  color: #2b6777;
+  padding: 10px;
+  font-weight: 600;
+}
+
+.box-with-col {
+  border-bottom: 0.5px solid #2b6777;
+  padding-bottom: 20px;
+}
+
+.list-item-button {
+  font-size: large;
+  font-weight: 600;
+}
+
+.data-box {
+  border-bottom: 0.5px solid #2b6777;
+  padding-bottom: 10px;
+}
